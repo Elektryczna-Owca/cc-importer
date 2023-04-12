@@ -4,25 +4,15 @@ namespace App\Model;
 
 class FileImportResultDto
 {
-    public array $content;    
+    public FileImportRequestDto $request;
+
     public bool $isError = false;    
     public ?string $error = null;  
 
-    public static function of(array $content, bool $isError = false, string $error = ''): FileImportResultDto
+    function __construct(bool $isError = false, string $error = '')
     {
-        $page = new FileImportResultDto();
-        $page->setContent($content)
-            ->setIsError($isError)
+        $this->setIsError($isError)
             ->setError($error);
-
-        return $page;
-    }
-
-    public function setContent(array $content): self
-    {
-        $this->content = $content;
-
-        return $this;
     }
 
     public function setIsError(bool $isError): self
@@ -39,14 +29,9 @@ class FileImportResultDto
         return $this;
     }
 
-   
-  
-    public function asArray(): array
+    public function setRequest(FileImportRequestDto $request)
     {
-        return [
-            'isError' => $this->isError,
-            'error' => $this->error,
-            'content' => $this->content->toArray()
-        ];
+        $this->request = $request;
     }
+     
 }

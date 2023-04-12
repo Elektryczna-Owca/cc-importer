@@ -8,9 +8,10 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Service\FileUploader;
 use App\Service\CSVFileToDBImporter;
-use Psr\Log\LoggerInterface;
 use App\Model\ImportResourceResult;
 use App\Model\FileImportResourceResult;
+use App\Model\FileImportRequestDto;
+use Psr\Log\LoggerInterface;
 
 class UploadController extends AbstractController
 {
@@ -25,19 +26,11 @@ class UploadController extends AbstractController
     public function index(Request $request, string $uploadDir,
                           FileUploader $uploader, CSVFileToDBImporter $dbImporter, LoggerInterface $logger): Response
     {
-        $token = $request->get("token");
         $file = $request->files->get('myfile');
-        $doNotDelete = $request->get('doNotDelete');
-        $testUpload = $request->get('testUpload');
-        $importerName = $request->get('importerName');        
-        if (!$this->isCsrfTokenValid('upload', $token))
-        {
-            $logger->info("CSRF failure");
-
-            return new Response("Operation not allowed",  Response::HTTP_BAD_REQUEST,
-                ['content-type' => 'text/plain']);
-        }
-
+        $inData = new FileImportRequestDto();
+        $inData->doNotDelete = $request->get('doNotDelete') == true;
+        $inData->testOnly = $request->get('testUpload') == true;
+        $inData->importerName = $request->get('importerName');        
 
         if (empty($file))
         {
@@ -45,14 +38,14 @@ class UploadController extends AbstractController
                Response::HTTP_UNPROCESSABLE_ENTITY, ['content-type' => 'text/plain']);
         }              
 
-        $res = $dbImporter->initImporterByName($importerName);
+        $inData->file = $file->getClientOriginalName();
+        $res = $dbImporter->initImporterByName($inData->importerName);
         if (!$res->isError)
         {
-            $filename = $file->getClientOriginalName();
-            $logger->info($filename);
-            $uploader->upload($uploadDir, $file, $filename);
-            $res = $dbImporter->importResources($uploadDir . '/' . $filename, $testUpload, $doNotDelete);
+            $uploader->upload($uploadDir, $file, $inData->file);
+            $res = $dbImporter->importResources($uploadDir . '/' . $inData->file, $inData->testOnly, $inData->doNotDelete);
         }
+        $res->setRequest($inData);
       
         return $this->json($res);     
     }

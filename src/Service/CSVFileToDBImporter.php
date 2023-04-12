@@ -6,6 +6,7 @@ use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Psr\Log\LoggerInterface;
 use App\Model\FileImportResultDto;
 use App\Model\ResourceImportResultDto;
+use App\Model\FileImportResultExtDto;
 
 class CSVFileToDBImporter
 {
@@ -17,7 +18,7 @@ class CSVFileToDBImporter
         $this->logger = $logger;
     }
 
-    public function initImporterByName($importerName) : FileImportResultDto
+    public function initImporterByName(string $importerName) : FileImportResultDto
     {
         $mysqli = mysqli_connect("localhost", "root", "Marchewka", "curriculum");
         $stmt = $mysqli->prepare('SELECT id FROM importer WHERE name = ?;');
@@ -25,40 +26,62 @@ class CSVFileToDBImporter
         $stmt->execute();
         $stmt->store_result();
         $stmt->bind_result($result);
-        $content = array();
         if ($stmt->fetch())
         {
-            $importer_id = $result;
-            $this->logger->info('Importer found');
-            return FileImportResultDto::of ($content);
+            $this->importer_id = $result;
+            $this->logger->info('Importer found'  );
+            return new FileImportResultDto();
         }
         else
         {
             $this->logger->info('No matching importer found');
-            return FileImportResultDto::of ($content, true, 'No matching importer found');
+            return new FileImportResultDto(true, 'No matching importer found');
         }
     }
 
-    public function importResources($filePath, $testOnly, $deleteAll) : FileImportResultDto
+    public function initImporterByToken(string $token) : FileImportResultDto
     {
-        if ($testOnly)
-            $this->logger->info('Test only');
-        if ($deleteAll)
-            $this->logger->info('Delete all');
+        $mysqli = mysqli_connect("localhost", "root", "Marchewka", "curriculum");
+        $stmt = $mysqli->prepare('SELECT id FROM importer WHERE token = ?;');
+        $stmt->bind_param('s', $token);
+        $stmt->execute();
+        $stmt->store_result();
+        $stmt->bind_result($result);
+        if ($stmt->fetch())
+        {
+            $this->importer_id = $result;
+            $this->logger->info('Importer found');
+            return new FileImportResultDto();
+        }
+        else
+        {
+            $this->logger->info('No matching importer found');
+            return new FileImportResultDto(true, 'No matching importer found');
+        }
+    }
+
+    public function importResources(string $filePath, bool $testOnly, bool $doNotDelete) : FileImportResultExtDto
+    {
+        
         $content = array();
         $i = 0;
         $hasError = false;
+        $deleted = 0;
+        $inserted = 0;
         if (($handle = fopen($filePath, "r")) !== false) 
         {            
             $mysqli = mysqli_connect("localhost", "root", "Marchewka", "curriculum");
             mysqli_begin_transaction($mysqli);
 
-            if ($deleteAll)
+            if (! $doNotDelete)
             {
+                $this->logger->info('Delete all on import');
+
                 $stmt = $mysqli->prepare('DELETE FROM resource WHERE importer_id = ?;');
-                $stmt->bind_param('d', $importer_id);
+                $stmt->bind_param('d', $this->importer_id);
                 $stmt->execute();
-                $this->logger->info('delete' . $mysqli->affected_rows);
+                $deleted = $mysqli->affected_rows;
+                $this->logger->info('deleted ->' . $deleted .' for importer' . strval( $this->importer_id) ) ;
                 $stmt->close();
             }
 
@@ -81,7 +104,7 @@ class CSVFileToDBImporter
                     $grade7 = str_contains($data[3], '7');
                     $grade8 = str_contains($data[3], '8');
                     $symbols = $data[4] .','. $data[5];                        
-                    $stmt->bind_param('ssdsddddddddds', $data[0],  $data[1], $importer_id ,$data[2], 
+                    $stmt->bind_param('ssdsddddddddds', $data[0],  $data[1], $this->importer_id ,$data[2], 
                             $grade0, $grade1, $grade2, $grade3, $grade4, $grade5, $grade6, $grade7, $grade8, $symbols);
                     $stmt->execute();
                     $stmt->store_result();
@@ -90,6 +113,10 @@ class CSVFileToDBImporter
                     {
                         $lineRes->count = $result1;
                         $lineRes->error = $result2;
+                        if ($lineRes->count > 0)
+                            $inserted +=1;
+                        else
+                            $hasError = true;    
                         $this->logger->info($result1);
                         $this->logger->info($result2);
                     }
@@ -107,12 +134,12 @@ class CSVFileToDBImporter
             }
 
 
-            if ($testOnly || $hasError)
+            if ($testOnly)// || $hasError)
                 $mysqli->rollback();
             else 
                 $mysqli->commit();
             fclose($handle);
-            return FileImportResultDto::of ($content, $testOnly || $hasError);
+            return new FileImportResultExtDto($content, $deleted, $inserted, $hasError);
         }
     }
 }
