@@ -11,6 +11,7 @@ use App\Service\CSVFileToDBImporter;
 use App\Model\ImportResourceResult;
 use App\Model\FileImportResourceResult;
 use App\Model\FileImportRequestDto;
+use App\Model\FileImportResultDto;
 use Psr\Log\LoggerInterface;
 
 class UploadController extends AbstractController
@@ -34,19 +35,29 @@ class UploadController extends AbstractController
 
         if (empty($file))
         {
-            return new Response("No file specified",
-               Response::HTTP_UNPROCESSABLE_ENTITY, ['content-type' => 'text/plain']);
+            $res = new FileImportResultDto(true, 'No file specified');
+            $res->setRequest($inData);        
+            return $this->json($res);     
         }              
 
         $inData->file = $file->getClientOriginalName();
-        $res = $dbImporter->initImporterByName($inData->importerName);
-        if (!$res->isError)
+        try
         {
-            $uploader->upload($uploadDir, $file, $inData->file);
-            $res = $dbImporter->importResources($uploadDir . '/' . $inData->file, $inData->testOnly, $inData->doNotDelete);
+            $res = $dbImporter->initImporterByName($inData->importerName);
+            if (!$res->isError)
+            {
+                $uploader->upload($uploadDir, $file, $inData->file);
+                $res = $dbImporter->importResources($uploadDir . '/' . $inData->file, $inData->testOnly, $inData->doNotDelete);
+            }
+            $res->setRequest($inData);        
+            return $this->json($res);     
         }
-        $res->setRequest($inData);
-      
-        return $this->json($res);     
+        catch(Excectpion $e)
+        {
+            $res = new FileImportResultDto(true, 'Internal error' . $e->getMessage());
+            $res->setRequest($inData);        
+            return $this->json($res);     
+        }
+
     }
 }

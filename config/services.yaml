@@ -4,7 +4,11 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
-    upload_dir: '../var/uploads'
+    upload_dir: '%env(UPLOAD_DIR)%'
+    db_host: '%env(DB_HOST)%'
+    db_name: '%env(DB_NAME)%'
+    db_user: '%env(DB_USER)%'
+    db_pwd: '%env(DB_PWD)%'
 
 services:
     # default configuration for services in *this* file
@@ -13,6 +17,10 @@ services:
         autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
         bind:
             $uploadDir: '%upload_dir%'
+            $dbHost: '%db_host%'
+            $dbName: '%db_name%'
+            $dbUser: '%db_user%'
+            $dbPwd: '%db_pwd%'
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name
     App\:

@@ -12,15 +12,23 @@ class CSVFileToDBImporter
 {
     private $logger;
     private $importer_id = -1;
+    private string $dbHost;
+    private string $dbName;
+    private string $dbUser;
+    private string $dbPwd;
 
-    public function __construct(LoggerInterface $logger)
+    public function __construct(string $dbHost, string $dbName, string $dbUser, string $dbPwd, LoggerInterface $logger)
     {
+        $this->dbHost = $dbHost; 
+        $this->dbName = $dbName; 
+        $this->dbUser = $dbUser;
+        $this->dbPwd = $dbPwd;
         $this->logger = $logger;
     }
 
     public function initImporterByName(string $importerName) : FileImportResultDto
     {
-        $mysqli = mysqli_connect("localhost", "root", "Marchewka", "curriculum");
+        $mysqli = mysqli_connect($this->dbHost, $this->dbUser, $this->dbPwd, $this->dbName);
         $stmt = $mysqli->prepare('SELECT id FROM importer WHERE name = ?;');
         $stmt->bind_param('s', $importerName);
         $stmt->execute();
@@ -41,7 +49,7 @@ class CSVFileToDBImporter
 
     public function initImporterByToken(string $token) : FileImportResultDto
     {
-        $mysqli = mysqli_connect("localhost", "root", "Marchewka", "curriculum");
+        $mysqli = mysqli_connect($this->dbHost, $this->dbUser, $this->dbPwd, $this->dbName);
         $stmt = $mysqli->prepare('SELECT id FROM importer WHERE token = ?;');
         $stmt->bind_param('s', $token);
         $stmt->execute();
@@ -70,7 +78,7 @@ class CSVFileToDBImporter
         $inserted = 0;
         if (($handle = fopen($filePath, "r")) !== false) 
         {            
-            $mysqli = mysqli_connect("localhost", "root", "Marchewka", "curriculum");
+            $mysqli = mysqli_connect($this->dbHost, $this->dbUser, $this->dbPwd, $this->dbName);
             mysqli_begin_transaction($mysqli);
 
             if (! $doNotDelete)
