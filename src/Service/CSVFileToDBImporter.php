@@ -11,11 +11,11 @@ use App\Model\FileImportResultExtDto;
 class CSVFileToDBImporter
 {
     private $logger;
-    private $importer_id = -1;
     private string $dbHost;
     private string $dbName;
     private string $dbUser;
     private string $dbPwd;
+    private $importer_id = -1;
 
     public function __construct(string $dbHost, string $dbName, string $dbUser, string $dbPwd, LoggerInterface $logger)
     {
@@ -37,12 +37,11 @@ class CSVFileToDBImporter
         if ($stmt->fetch())
         {
             $this->importer_id = $result;
-            $this->logger->info('Importer found'  );
             return new FileImportResultDto();
         }
         else
         {
-            $this->logger->info('No matching importer found');
+            $this->logger->info('No matching importer found based on name');
             return new FileImportResultDto(true, 'No matching importer found');
         }
     }
@@ -58,12 +57,11 @@ class CSVFileToDBImporter
         if ($stmt->fetch())
         {
             $this->importer_id = $result;
-            $this->logger->info('Importer found');
             return new FileImportResultDto();
         }
         else
         {
-            $this->logger->info('No matching importer found');
+            $this->logger->info('No matching importer found based on token');
             return new FileImportResultDto(true, 'No matching importer found');
         }
     }
@@ -72,10 +70,8 @@ class CSVFileToDBImporter
     {
         
         $content = array();
-        $i = 0;
         $hasError = false;
-        $deleted = 0;
-        $inserted = 0;
+        $i = $deleted = $inserted = 0;
         if (($handle = fopen($filePath, "r")) !== false) 
         {            
             $mysqli = mysqli_connect($this->dbHost, $this->dbUser, $this->dbPwd, $this->dbName);
@@ -95,24 +91,30 @@ class CSVFileToDBImporter
 
             // Read and process the lines. 
             // Skip the first line if the file includes a header
-            while (($data = fgetcsv($handle)) !== false) 
+            while (($line = fgetcsv($handle)) !== false) 
             {
                 $lineRes = new ResourceImportResultDto();
-                $lineRes->data = $data[0] . ',' . $data[1] . ','. $data[2] ;
+                $lineRes->data = implode(',', $line);
                 try
                 {
+                    $grade0 = str_contains($line[3], '0');
+                    $grade1 = str_contains($line[3], '1');
+                    $grade2 = str_contains($line[3], '2');
+                    $grade3 = str_contains($line[3], '3');
+                    $grade4 = str_contains($line[3], '4');
+                    $grade5 = str_contains($line[3], '5');
+                    $grade6 = str_contains($line[3], '6');
+                    $grade7 = str_contains($line[3], '7');
+                    $grade8 = str_contains($line[3], '8');                    
+                    $symbolsArray = array();
+                    for($j = 4; $j<count($line); $j++)
+                    {
+                        $symbolsArray[$j-4] = $line[$j];
+                    }
+                    $symbols = implode(',', $symbolsArray);                        
+
                     $stmt = $mysqli->prepare('CALL curriculum.IMPORT_RESOURCE(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, @O_COUNT, @O_ERROR);');
-                    $grade0 = str_contains($data[3], '0');
-                    $grade1 = str_contains($data[3], '1');
-                    $grade2 = str_contains($data[3], '2');
-                    $grade3 = str_contains($data[3], '3');
-                    $grade4 = str_contains($data[3], '4');
-                    $grade5 = str_contains($data[3], '5');
-                    $grade6 = str_contains($data[3], '6');
-                    $grade7 = str_contains($data[3], '7');
-                    $grade8 = str_contains($data[3], '8');
-                    $symbols = $data[4] .','. $data[5];                        
-                    $stmt->bind_param('ssdsddddddddds', $data[0],  $data[1], $this->importer_id ,$data[2], 
+                    $stmt->bind_param('ssdsddddddddds', $line[0],  $line[1], $this->importer_id ,$line[2], 
                             $grade0, $grade1, $grade2, $grade3, $grade4, $grade5, $grade6, $grade7, $grade8, $symbols);
                     $stmt->execute();
                     $stmt->store_result();
