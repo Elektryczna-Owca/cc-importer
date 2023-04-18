@@ -2,11 +2,9 @@
 
 namespace App\Service;
 
-use Symfony\Component\HttpFoundation\File\Exception\FileException;
-use Psr\Log\LoggerInterface;
 use App\Model\FileImportResultDto;
 use App\Model\ResourceImportResultDto;
-use App\Model\FileImportResultExtDto;
+use Psr\Log\LoggerInterface;
 
 class CSVFileToDBImporter
 {
@@ -66,7 +64,7 @@ class CSVFileToDBImporter
         }
     }
 
-    public function importResources(string $filePath, bool $testOnly, bool $doNotDelete) : FileImportResultExtDto
+    public function importResources(string $filePath, bool $testOnly, bool $doNotDelete) : FileImportResultDto
     {
         
         $content = array();
@@ -106,29 +104,23 @@ class CSVFileToDBImporter
                     $grade6 = str_contains($line[3], '6');
                     $grade7 = str_contains($line[3], '7');
                     $grade8 = str_contains($line[3], '8');                    
+
                     $symbolsArray = array();
                     for($j = 4; $j<count($line); $j++)
-                    {
                         $symbolsArray[$j-4] = $line[$j];
-                    }
                     $symbols = implode(',', $symbolsArray);                        
 
                     $stmt = $mysqli->prepare('CALL curriculum.IMPORT_RESOURCE(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, @O_COUNT, @O_ERROR);');
                     $stmt->bind_param('ssdsddddddddds', $line[0],  $line[1], $this->importer_id ,$line[2], 
                             $grade0, $grade1, $grade2, $grade3, $grade4, $grade5, $grade6, $grade7, $grade8, $symbols);
                     $stmt->execute();
-                    $stmt->store_result();
-                    $stmt->bind_result($result1, $result2);
+                    $stmt->bind_result($lineRes->count, $lineRes->error);
                     if($stmt->fetch())
                     {
-                        $lineRes->count = $result1;
-                        $lineRes->error = $result2;
                         if ($lineRes->count > 0)
                             $inserted +=1;
                         else
                             $hasError = true;    
-                        $this->logger->info($result1);
-                        $this->logger->info($result2);
                     }
                     else
                         $lineRes->error = "Internal: Cannot read query results";
@@ -143,13 +135,17 @@ class CSVFileToDBImporter
                 $content[$i++] = $lineRes;
             }
 
-
             if ($testOnly)// || $hasError)
                 $mysqli->rollback();
             else 
                 $mysqli->commit();
             fclose($handle);
-            return new FileImportResultExtDto($content, $deleted, $inserted, $hasError);
+
+            $res = new FileImportResultDto($hasError);
+            $res->content = $content;
+            $res->deleted = $deleted;
+            $res->inserted = $inserted;
+            return $res;
         }
     }
 }
