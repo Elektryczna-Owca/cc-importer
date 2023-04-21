@@ -29,9 +29,7 @@ class UploadController extends AbstractController
         $form = $this->createForm(UploadRequestType::class, $task);
 
         $form->handleRequest($request);
-        if ($form->isSubmitted()) {
-            $logger->info('Go go go' . $task->file .   $task->importer->getName()   );
-            
+        if ($form->isSubmitted()) {            
             $file = $form['file']->getData();
 
 
@@ -59,7 +57,9 @@ class UploadController extends AbstractController
             }
 
             $res->request = $task;   
+            
             //return $this->json($res);     
+
             $resForm = $this->createForm(FileImportResultDtoType::class, $res);   
             return $this->render('upload/result.html.twig', [
                 'form' => $resForm->createView(),

@@ -6,8 +6,31 @@
 
   <form method="post" enctype="multipart/form-data">
         
-        {{ form_start(form) }}
-        {{ form_end(form) }}
+    {{ form_start(form) }}
+      <fieldset>
+        <div>
+          <label>File:</label>
+          {{ form_widget(form.file)}}
+        </div>
+
+        <div>
+          <label>Test only:</label>
+          {{ form_widget(form.testOnly)}}
+        </div>
+
+        <div>
+          <label>Do  not delete:</label>
+          {{ form_widget(form.doNotDelete)}}
+        </div>
+        
+        <div>
+          <label>Importer:</label>
+          {{ form_widget(form.importer)}}
+        </div>
+
+        {{ form_widget(form.Upload)}}
+      </fieldset>
+    {{ form_end(form) }}
 
   </form>
 

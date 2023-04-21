@@ -2,14 +2,69 @@
 
 {% block title %}Upload file{% endblock %}
 
+{% macro datatype_prototype(childForm) %}
+   {{ form_widget(childForm) }}
+{% endmacro %}
+
 {% block body %}
 
-  <form method="post" enctype="multipart/form-data">
+{{ form_start(form) }}
+    <label>Request:</label>
+    <fieldset>
+        <div>
+          <label>File:</label>
+          {{ form_widget(form.request.file)}}
+        </div>
+
+        <div>
+          <label>Test only:</label>
+          {{ form_widget(form.request.testOnly)}}
+        </div>
+
+        <div>
+          <label>Do  not delete:</label>
+          {{ form_widget(form.request.doNotDelete)}}
+        </div>
         
-        {{ form_start(form) }}
+        <div>
+          <label>Importer:</label>
+          {{ form_widget(form.request.importer)}}
+        </div>
 
-        {{ form_end(form) }}
+    </fieldset>
 
-  </form>
+    <label>Result:</label>
+     <fieldset>
+    <div>
+        <label>Is Error</label>
+        {{ form_widget(form.isError)}}
+        {{ form_widget(form.error)}}
+    </div>
+    <div>
+        {{form_widget(form.deleted)}}
+        <label>item(s) deleted from database</label>
+    </div>
+    <div>
+        {{form_widget(form.inserted)}}
+        <label>item(s) inserted into database</label>
+    </div>
+    <table>
+        <tr>
+        <th>Line number</th>
+        <th>Line data</th>
+        <th>Links created</th>
+        <th>Error</th>
+        </tr>
+        {% for item in form.content %}
+        <tr>
+            <td></td>
+            <td>{{ form_widget(item.data) }}</td>
+            <td>{{ form_widget(item.count) }}</td>
+            <td>{{ form_widget(item.error) }}</td>
+        </tr>
+        {% endfor %}
+    <table>
+    </fieldset>
+{{ form_end(form) }}
 
 {% endblock %}

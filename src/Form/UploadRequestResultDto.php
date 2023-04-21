@@ -2,13 +2,12 @@
 
 namespace App\Form;
 
-use App\Model\FileImportResultDto;
-use App\Model\ResourceImportResultDto;
+use App\Entity\Importer;
+use App\Model\UploadRequest;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
-use Symfony\Component\Form\Extension\Core\Type\IntegerType;
+use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
-use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormInterface;
@@ -17,22 +16,25 @@ use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 
-
-class FileImportResultDtoType extends AbstractType
+class UploadRequestResultDto extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
-
         $builder
-        ->add('request', UploadRequestResultDto::class, ['disabled' => true])
-        ->add('isError', CheckboxType::class, ['disabled' => true])
-        ->add('error', TextType::class, ['disabled' => true])
-        ->add('deleted', IntegerType::class, ['disabled' => true])
-        ->add('inserted', IntegerType::class, ['disabled' => true])
-        ->add('content', CollectionType::class, [
-            'entry_type' => ResourceImportResultDtoType::class,
-            'disabled' => true
-        ]);
+        ->add('file', TextType::class)
+        ->add('testOnly', CheckboxType::class, array('required' => false))
+        ->add('doNotDelete', CheckboxType::class, array('required' => false))
+        ->add('importer', ImporterType::class)
+        ->add(
+            'importer',
+            EntityType::class,
+            [
+                'class' => Importer::class,
+                'choice_label' => 'name',
+                'expanded' => false,
+                'multiple' => false
+            ]
+            );
 
         return $builder;
     }
@@ -40,7 +42,7 @@ class FileImportResultDtoType extends AbstractType
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'data_class' => FileImportResultDto::class,
+            'data_class' => UploadRequest::class,
         ]);
     }
 }
