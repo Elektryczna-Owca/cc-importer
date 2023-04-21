@@ -24,7 +24,8 @@ class FileImportResultDtoType extends AbstractType
     {
 
         $builder
-        ->add('request', UploadRequestType::class, ['disabled' => true])
+        ->add('importer', TextType::class, ['disabled' => true])
+        ->add('request', UploadRequestResultDto::class, ['disabled' => true])
         ->add('isError', CheckboxType::class, ['disabled' => true])
         ->add('error', TextType::class, ['disabled' => true])
         ->add('deleted', IntegerType::class, ['disabled' => true])

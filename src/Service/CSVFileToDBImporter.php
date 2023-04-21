@@ -2,8 +2,10 @@
 
 namespace App\Service;
 
+use App\Entity\Importer;
 use App\Model\FileImportResultDto;
 use App\Model\ResourceImportResultDto;
+use App\Repository\ImporterRepository;
 use Psr\Log\LoggerInterface;
 
 class CSVFileToDBImporter
@@ -14,53 +16,46 @@ class CSVFileToDBImporter
     private string $dbUser;
     private string $dbPwd;
     private $importer_id = -1;
+    private ?Importer $importer;
+    private ImporterRepository $importerRepo;
 
-    public function __construct(string $dbHost, string $dbName, string $dbUser, string $dbPwd, LoggerInterface $logger)
+    public function __construct(string $dbHost, string $dbName, string $dbUser, string $dbPwd, ImporterRepository $importerRepo, LoggerInterface $logger)
     {
         $this->dbHost = $dbHost; 
         $this->dbName = $dbName; 
         $this->dbUser = $dbUser;
         $this->dbPwd = $dbPwd;
         $this->logger = $logger;
+        $this->importerRepo = $importerRepo;
     }
 
     public function initImporterByName(string $importerName) : FileImportResultDto
     {
-        $mysqli = mysqli_connect($this->dbHost, $this->dbUser, $this->dbPwd, $this->dbName);
-        $stmt = $mysqli->prepare('SELECT id FROM importer WHERE name = ?;');
-        $stmt->bind_param('s', $importerName);
-        $stmt->execute();
-        $stmt->store_result();
-        $stmt->bind_result($result);
-        if ($stmt->fetch())
-        {
-            $this->importer_id = $result;
-            return new FileImportResultDto();
-        }
-        else
+        $this->importer = $this->importerRepo->findOneBy(["name" => $importerName]);
+        if (empty($this->importer))
         {
             $this->logger->info('No matching importer found based on name');
             return new FileImportResultDto(true, 'No matching importer found');
+        }
+        else
+        {
+            $this->importer_id = $this->importer->getId(); 
+            return new FileImportResultDto();
         }
     }
 
     public function initImporterByToken(string $token) : FileImportResultDto
     {
-        $mysqli = mysqli_connect($this->dbHost, $this->dbUser, $this->dbPwd, $this->dbName);
-        $stmt = $mysqli->prepare('SELECT id FROM importer WHERE token = ?;');
-        $stmt->bind_param('s', $token);
-        $stmt->execute();
-        $stmt->store_result();
-        $stmt->bind_result($result);
-        if ($stmt->fetch())
-        {
-            $this->importer_id = $result;
-            return new FileImportResultDto();
-        }
-        else
+        $this->importer = $this->importerRepo->findOneBy(["token" => $token]);
+        if (empty($this->importer))
         {
             $this->logger->info('No matching importer found based on token');
             return new FileImportResultDto(true, 'No matching importer found');
+        }
+        else
+        {
+            $this->importer_id = $this->importer->getId(); 
+            return new FileImportResultDto();
         }
     }
 
@@ -145,6 +140,7 @@ class CSVFileToDBImporter
             $res->content = $content;
             $res->deleted = $deleted;
             $res->inserted = $inserted;
+            $res->importer = $this->importer->getName();
             return $res;
         }
     }

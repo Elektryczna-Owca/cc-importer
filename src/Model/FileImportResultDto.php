@@ -1,10 +1,12 @@
 <?php
 
 namespace App\Model;
+use App\Entity\Importer;
 
 class FileImportResultDto
 {
     public UploadRequest $request;
+    public string $importer;
 
     public bool $isError = false;    
     public ?string $error = null;  

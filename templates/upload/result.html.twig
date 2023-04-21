@@ -12,6 +12,11 @@
     <label>Request:</label>
     <fieldset>
         <div>
+          <label>Importer:</label>
+          {{ form_widget(form.importer)}}
+        </div>
+
+        <div>
           <label>File:</label>
           {{ form_widget(form.request.file)}}
         </div>

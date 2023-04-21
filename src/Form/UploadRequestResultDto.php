@@ -23,18 +23,7 @@ class UploadRequestResultDto extends AbstractType
         $builder
         ->add('file', TextType::class)
         ->add('testOnly', CheckboxType::class, array('required' => false))
-        ->add('doNotDelete', CheckboxType::class, array('required' => false))
-        ->add('importer', ImporterType::class)
-        ->add(
-            'importer',
-            EntityType::class,
-            [
-                'class' => Importer::class,
-                'choice_label' => 'name',
-                'expanded' => false,
-                'multiple' => false
-            ]
-            );
+        ->add('doNotDelete', CheckboxType::class, array('required' => false));
 
         return $builder;
     }

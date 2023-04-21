@@ -57,7 +57,7 @@ class UploadController extends AbstractController
                     if (empty($token))
                         $res = $dbImporter->initImporterByName($task->importer->getName());                        
                     else
-                        $res = $dbImporter->initImporterByName($token);
+                        $res = $dbImporter->initImporterByToken($token);
 
                     if (!$res->isError)
                     {
