@@ -3,7 +3,7 @@
 namespace App\Form;
 
 use App\Entity\Importer;
-use App\Model\UploadRequest;
+use App\Model\UploadWithImporterRequest;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
@@ -16,7 +16,7 @@ use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 
-class UploadRequestType extends AbstractType
+class UploadWithImporterRequestType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
@@ -24,6 +24,17 @@ class UploadRequestType extends AbstractType
         ->add('file', FileType::class)
         ->add('testOnly', CheckboxType::class, array('required' => false))
         ->add('doNotDelete', CheckboxType::class, array('required' => false))
+        ->add('importer', ImporterType::class)
+        ->add(
+            'importer',
+            EntityType::class,
+            [
+                'class' => Importer::class,
+                'choice_label' => 'name',
+                'expanded' => false,
+                'multiple' => false
+            ]
+        )
         ->add('Upload', SubmitType::class);
 
         return $builder;
@@ -32,7 +43,7 @@ class UploadRequestType extends AbstractType
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'data_class' => UploadRequest::class,
+            'data_class' => UploadWithImporterRequest::class,
         ]);
     }
 }

@@ -4,8 +4,10 @@ namespace App\Controller;
 
 use App\Model\FileImportResultDto;
 use App\Model\UploadRequest;
+use App\Model\UploadWithImporterRequest;
 use App\Form\FileImportResultDtoType;
 use App\Form\UploadRequestType;
+use App\Form\UploadWithImporterRequestType;
 use App\Service\FileUploader;
 use App\Service\CSVFileToDBImporter;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
@@ -25,13 +27,22 @@ class UploadController extends AbstractController
     public function index(Request $request, string $uploadDir,
             FileUploader $uploader, CSVFileToDBImporter $dbImporter, LoggerInterface $logger): Response
     {
-        $task = new UploadRequest();     
-        $form = $this->createForm(UploadRequestType::class, $task);
+        $token = $request->get('token');
+
+        if (empty($token))
+        {
+            $task = new UploadWithImporterRequest();     
+            $form = $this->createForm(UploadWithImporterRequestType::class, $task);
+        }
+        else
+        {
+            $task = new UploadRequest();
+            $form = $this->createForm(UploadRequestType::class, $task);            
+        }
 
         $form->handleRequest($request);
         if ($form->isSubmitted()) {            
             $file = $form['file']->getData();
-
 
             $res = new FileImportResultDto(true, 'Unknown');
 
@@ -43,12 +54,18 @@ class UploadController extends AbstractController
             {
                 try
                 {
-                    $res = $dbImporter->initImporterByName($task->importer->getName());
+                    if (empty($token))
+                        $res = $dbImporter->initImporterByName($task->importer->getName());                        
+                    else
+                        $res = $dbImporter->initImporterByName($token);
+
                     if (!$res->isError)
                     {
+                        $logger->info('Importing ....');
                         $uploader->upload($uploadDir, $file, $file->getClientOriginalName());
                         $res = $dbImporter->importResources($uploadDir . '/' . $file->getClientOriginalName(), $task->testOnly, $task->doNotDelete);
                     }
+                    $logger->info($res->error);
                 }
                 catch(Excectpion $e)
                 {
@@ -67,8 +84,13 @@ class UploadController extends AbstractController
             
         }
 
-        return $this->render('upload/index.html.twig', [
-            'form' => $form->createView(),
-        ]);
+        if (empty($token))
+            return $this->render('upload/indexWithImporter.html.twig', [
+                'form' => $form->createView(),
+            ]);
+        else
+            return $this->render('upload/index.html.twig', [
+                'form' => $form->createView(),
+            ]);
     }    
 }

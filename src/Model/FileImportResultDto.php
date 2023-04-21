@@ -15,6 +15,6 @@ class FileImportResultDto
     function __construct(bool $isError = false, string $error = '')
     {
         $this->isError = $isError;
-        $this->$error = $error;
+        $this->error = $error;
     }   
 }
