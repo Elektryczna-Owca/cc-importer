@@ -7,7 +7,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use JsonSerializable;
 
-#[ORM\Table(name: 'Importer')]
+#[ORM\Table(name: 'importer')]
 #[ORM\Entity(repositoryClass: ImporterRepository::class)]
 class Importer implements JsonSerializable
 {
