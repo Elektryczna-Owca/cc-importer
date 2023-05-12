@@ -58,6 +58,8 @@ class FileImportResultDto
                 border-bottom: 0;
                 border-left: 0;
                 border-right: 0;
+                boxing: 15px;
+                margin-bottom: 15px;
                 }
         </style>
         </head>
@@ -65,13 +67,13 @@ class FileImportResultDto
         <fieldset>
         <legend>Reqested with:</legend>"
         .(property_exists($this->request, 'importer') ? ("<div><label>Importer:<b>".$this->request->importer->getName()."</b></label></div>") : "").
-        "<div><label>File: <b>".$this->request->file."</b></label></div>
+        "<div><label>File: <b>".$this->request->file->getClientOriginalName()."</b></label></div>
         <div><label>Test only: <b>".($this->request->testOnly ? "Yes":"No")."</b></label></div>
         <div><label>Do not delete:<b>".($this->request->doNotDelete ? "Yes":"No")."</b></label></div>
+        </fieldset>  
         <fieldset>
-        <legend>Result:</legend>"
-        .($this->isError?"<div><label>Error: ".$this->error."<b></b></label></div>":"").
-        "<div><label>Total lines: <b>".count($this->content)."</b></label></div>
+        <legend>Result with:".($this->isError?"<b> Error ".($this->error== null?"":" (".$this->error.")")."</b>":"")."</legend>
+        <div><label>Total lines: <b>".count($this->content)."</b></label></div>
         <div><label><b>".$this->deleted."</b> item(s) deleted from database</label></div>
         <div><label><b>".$this->inserted."</b> item(s) inserted into database</label></div>
         </div>
@@ -83,8 +85,7 @@ class FileImportResultDto
                 <th>Error</th>
             </tr>"
             .$tableHtml.
-        "</table>
-        </fieldset>  
+        "</table>        
         </fieldset>
         </body></html>";
 

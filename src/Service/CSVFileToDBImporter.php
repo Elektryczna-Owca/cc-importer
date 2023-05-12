@@ -88,45 +88,53 @@ class CSVFileToDBImporter
             {
                 $lineRes = new ResourceImportResultDto();
                 $lineRes->data = implode(',', $line);
-                try
-                {
-                    $grade0 = str_contains($line[3], '0');
-                    $grade1 = str_contains($line[3], '1');
-                    $grade2 = str_contains($line[3], '2');
-                    $grade3 = str_contains($line[3], '3');
-                    $grade4 = str_contains($line[3], '4');
-                    $grade5 = str_contains($line[3], '5');
-                    $grade6 = str_contains($line[3], '6');
-                    $grade7 = str_contains($line[3], '7');
-                    $grade8 = str_contains($line[3], '8');                    
-
-                    $symbolsArray = array();
-                    for($j = 4; $j<count($line); $j++)
-                        $symbolsArray[$j-4] = $line[$j];
-                    $symbols = implode(',', $symbolsArray);                        
-
-                    $stmt = $mysqli->prepare('CALL curriculum.IMPORT_RESOURCE(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, @O_COUNT, @O_ERROR);');
-                    $stmt->bind_param('ssdsddddddddds', $line[0],  $line[1], $this->importer_id ,$line[2], 
-                            $grade0, $grade1, $grade2, $grade3, $grade4, $grade5, $grade6, $grade7, $grade8, $symbols);
-                    $stmt->execute();
-                    $stmt->bind_result($lineRes->count, $lineRes->error);
-                    if($stmt->fetch())
-                    {
-                        if ($lineRes->count > 0)
-                            $inserted +=1;
-                        else
-                            $hasError = true;    
-                    }
-                    else
-                        $lineRes->error = "Internal: Cannot read query results";
-                    $stmt->free_result();
-                    $stmt->close();
-                }
-                catch(mysqli_sql_exception $exception)
+                if (count($line) < 4)
                 {
                     $hasError = true;
-                    $lineRes->error = $exception;
-                }                
+                    $lineRes->error = "Improper line format";
+                }
+                else
+                {
+                    try
+                    {
+                        $grade0 = str_contains($line[3], '0');
+                        $grade1 = str_contains($line[3], '1');
+                        $grade2 = str_contains($line[3], '2');
+                        $grade3 = str_contains($line[3], '3');
+                        $grade4 = str_contains($line[3], '4');
+                        $grade5 = str_contains($line[3], '5');
+                        $grade6 = str_contains($line[3], '6');
+                        $grade7 = str_contains($line[3], '7');
+                        $grade8 = str_contains($line[3], '8');                    
+
+                        $symbolsArray = array();
+                        for($j = 4; $j<count($line); $j++)
+                            $symbolsArray[$j-4] = $line[$j];
+                        $symbols = implode(',', $symbolsArray);                        
+
+                        $stmt = $mysqli->prepare('CALL curriculum.IMPORT_RESOURCE(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, @O_COUNT, @O_ERROR);');
+                        $stmt->bind_param('ssdsddddddddds', $line[0],  $line[1], $this->importer_id ,$line[2], 
+                                $grade0, $grade1, $grade2, $grade3, $grade4, $grade5, $grade6, $grade7, $grade8, $symbols);
+                        $stmt->execute();
+                        $stmt->bind_result($lineRes->count, $lineRes->error);
+                        if($stmt->fetch())
+                        {
+                            if ($lineRes->count > 0)
+                                $inserted +=1;
+                            else
+                                $hasError = true;    
+                        }
+                        else
+                            $lineRes->error = "Internal: Cannot read query results";
+                        $stmt->free_result();
+                        $stmt->close();
+                    }
+                    catch(mysqli_sql_exception $exception)
+                    {
+                        $hasError = true;
+                        $lineRes->error = $exception;
+                    } 
+                }               
                 $content[$i++] = $lineRes;
             }
 
