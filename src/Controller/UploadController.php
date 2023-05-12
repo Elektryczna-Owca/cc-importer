@@ -75,8 +75,10 @@ class UploadController extends AbstractController
 
             $res->request = $task;   
             
+          
             //return $this->json($res);     
 
+            return new Response($res->AsHTMLString());
             $resForm = $this->createForm(FileImportResultDtoType::class, $res);   
             return $this->render('upload/result.html.twig', [
                 'form' => $resForm->createView(),
